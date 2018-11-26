@@ -18,7 +18,6 @@ function doSolve(clauses, assignment) {
     let isSat = false;
     let cont=0;
     let testTotal=Math.pow(2, assignment.length);
-    let clausulaValida=false;
     let clausulasE;
     let clausulasOU;
     while ((!isSat) && cont<testTotal) {
