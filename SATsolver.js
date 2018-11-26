@@ -1,22 +1,16 @@
-exports.solve = function(fileName) {
-    let formula = readFormula(fileName);
-    let result = doSolve(formula.clauses, formula.variables);
-    console.log(result);
-    return result // two fields: isSat and satisfyingAssignment
-};
-
 //Muda os 0 e 1 para testar todas as possibilidades
 function nextAssignment(variables) {
-    for(let i=0; i<variables.length; i++){
-        if (variables[i] === 0) {
-            variables[i] = 1;
-            i=variables.length;
+    stop=false;
+    for(let i=variables.length-1; i>=0 && stop==false ; i--) {
+        let aux=variables[i];
+        if (aux==0) {
+            variables[i]=true;
+            stop=true;
         } else {
-            variables[i] = 0;
-            i=variables.length;
+            variables[i]=false;
         }
     }
-    return variables;
+    return variables
 }
 
 //retorna resultado do SAT
@@ -24,27 +18,26 @@ function doSolve(clauses, assignment) {
     let isSat = false;
     let cont=0;
     let testTotal=Math.pow(2, assignment.length);
+    let clausulaValida=false;
     let clausulasE;
     let clausulasOU;
-    while (!isSat && cont<testTotal) {
-        clausulasE=false;
-        for (let i = 0; i < clauses.length; i++) {
+    while ((!isSat) && cont<testTotal) {
+        clausulasE=true;
+        for (let i=0; i<clauses.length && clausulasE; i++) {
             clausulasOU=false;
-            for(let j = 0; j < assignment.length && !clausulasOU; j++){
-                for (let k = 0; k < clauses[j].length; k++) {
-                    if (clauses[i][k]=j+1) {
+            for(let j=0; j<assignment.length && !clausulasOU; j++){
+                for (let k=0; k<clauses[i].length; k++) {
+                    if (clauses[i][k]>0) {
                         clausulasOU = clausulasOU || assignment[j];
-                    } else if (clauses[i][k]=-(k+1)) {
+                    } else if (clauses[i][k]<0) {
                         clausulasOU = clausulasOU || !assignment[j];
                     }
                 }
             }
-            clausulasE = clausulasE && clausulasOU;
+            isSat = clausulasE && clausulasOU;
         }
-        if (clausulasE) {
-            isSat=true;
-        }else {
-            assignment = nextAssignment(assignment);
+        if (!isSat) {
+           assignment=nextAssignment(assignment);
         }
         cont++;
     }
@@ -58,8 +51,8 @@ function doSolve(clauses, assignment) {
 //Lê o arquivo e devolve um objeto com atributos clausulas e variaveis
 function readFormula(fileName) {
     let fs = require('fs');
-    let data = fs.readFileSync(fileName).toString();
-    let text = data.split ('\n');// = ...  //  an array containing lines of text extracted from the file.
+    let data = fs.readFileSync('./sat-master/' + fileName, "utf8");
+    let text = data.split ('\n');
     let clauses = readClauses(text);
     let variables = readVariables(clauses);
     let specOk = checkProblemSpecification(text, clauses, variables);
@@ -76,21 +69,15 @@ function readClauses(text) {
     let clausulas = ""; //variavel que recebe todas as clausulas em uma string
     for (let i = 0; i < text.length; i++) {
         if (text[i].charAt(0) !== 'p' && text[i].charAt(0) !== 'c') {
-            clausulas += ' '+text[i]; //add clausulas
+            clausulas += text[i]+' ' ; //add clausulas
         }
     }
+
     let arrayAux=[];
-    let clausulasArray=clausulas.split(' 0');
-    clausulasArray.pop(); //remove o ultimo elemento
-    for(let i=0; i<clausulasArray.length;i++){
-        arrayAux=clausulasArray[i].split(' ');
-        arrayAux.shift(); //remove o primeiro elemento
-        for(let j=0; j<arrayAux.length; j++){
-            arrayAux[j]=parseInt(arrayAux);
-        }
-        clausulasArray[i]=arrayAux;
-    }
-    return clausulasArray;
+    arrayAux=clausulas.split(" 0");
+    arrayAux.pop(); //remove o ultimo elemento
+
+    return arrayAux;
 }
 
 
@@ -106,7 +93,7 @@ function readVariables(clauses) {
         }
     }
     for (let i = 0; i < aux; i++) {
-        variaveisArray[i] = 0;
+        variaveisArray[i] = false;
     }
     return variaveisArray;
 }
@@ -116,11 +103,18 @@ function checkProblemSpecification(text, clauses, variables) {
     let p = "";
     for (let i = 0; i <text.length; i++) {
         if (text[i].charAt(0) === 'p') {
-            p = text[i]; // se a linha se inicia por p, a string é salva no pLine.
+            p = text[i]; // se a linha se inicia por p, a string é salva em p
             i = text.length;
         }
     }
     let pSeparado = p.split(' ');
-    p = [parseInt(pSeparado[2]), parseInt(pSeparado[3])]; // salva apenas os valores referentes a qnt de variáveis e de clausulas, respectivamente.
+    p = [parseInt(pSeparado[2]), parseInt(pSeparado[3])]; // salva a qnt de variáveis e de clausulas
     return p[0] === variables.length && p[1] === clauses.length;
+
 }
+
+function solve(fileName){
+    var formula = readFormula(fileName);
+    return doSolve(formula.clauses, formula.variables);
+}
+console.log(solve('arquivo.cnf'));
